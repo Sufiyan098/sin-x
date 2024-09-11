@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIN ✘ - Solar System Visualization</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+        #project-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        #project-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        #creator-name {
+            font-size: 14px;
+        }
+        #info-panel {
+            position: absolute;
+            top: 60px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px;
+            width: 300px;
+            display: none;
+            border-radius: 10px;
+        }
+        #info-panel img {
+            width: 100%;
+            height: auto;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+        #zoom-info {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px;
+        }
+        #navbar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px 0;
+            text-align: center;
+        }
+        #navbar a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            margin: 0 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        #navbar a:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: rgba(0, 0, 0, 0.8);
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            color: white;
+            border-radius: 10px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: #fff;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="navbar">
+        <a href="#" id="home-btn">Home</a>
+        <a href="#" id="about-btn">About</a>
+        <a href="#" id="team-btn">Team</a>
+    </div>
+    <div id="project-info">
+        <div id="project-name">SIN ✘ </div>
+        <div id="creator-name">Made by Sufiyan Rajput</div>
+    </div>
+    <div id="info-panel"></div>
+    <div id="zoom-info">Zoom Level: Solar System</div>
+
+    <div id="about-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>About SIN ✘ </h2>
+            <p>SIN X SSV (Solar System Visualization) is an interactive 3D representation of our solar system. This project aims to provide an engaging and educational experience for users to explore the planets, their orbits, and learn about the cosmic bodies in our solar neighborhood.</p>
+            <h3>Key Features:</h3>
+            <ul>
+                <li>Accurate representation of planet sizes and orbits</li>
+                <li>Interactive zoom and rotation controls</li>
+                <li>Detailed information about each planet</li>
+                <li>Realistic textures and asteroid belt visualization</li>
+                <li>Educational tool for astronomy enthusiasts and students</li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="team-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Team Information</h2>
+            <p>SIN X was created by Sufiyan Rajput, a passionate developer with a keen interest in astronomy and interactive visualizations. This project showcases the combination of web technologies and scientific accuracy to create an engaging educational tool.</p>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        const textureLoader = new THREE.TextureLoader();
+
+        // Add universe background
+        const universeGeometry = new THREE.SphereGeometry(50000, 32, 32);
+        const universeMaterial = new THREE.MeshBasicMaterial({
+            map: textureLoader.load('https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/NGC_4414_%28NASA-med%29.jpg/1024px-NGC_4414_%28NASA-med%29.jpg'),
+            side: THREE.BackSide
+        });
+        const universeMesh = new THREE.Mesh(universeGeometry, universeMaterial);
+        scene.add(universeMesh);
+
+        // Add Milky Way background
+        const milkyWayGeometry = new THREE.SphereGeometry(20000, 32, 32);
+        const milkyWayMaterial = new THREE.MeshBasicMaterial({
+            map: textureLoader.load('https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/ESO-VLT-Laser-phot-33a-07.jpg/1280px-ESO-VLT-Laser-phot-33a-07.jpg'),
+            side: THREE.BackSide
+        });
+        const milkyWayMesh = new THREE.Mesh(milkyWayGeometry, milkyWayMaterial);
+        scene.add(milkyWayMesh);
+
+        // Add stars
+        const starsGeometry = new THREE.BufferGeometry();
+        const starsMaterial = new THREE.PointsMaterial({color: 0xFFFFFF, size: 0.1});
+        const starsVertices = [];
+        for (let i = 0; i < 100000; i++) {
+            const x = THREE.MathUtils.randFloatSpread(10000);
+            const y = THREE.MathUtils.randFloatSpread(10000);
+            const z = THREE.MathUtils.randFloatSpread(10000);
+            starsVertices.push(x, y, z);
+        }
+        starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
+        const starField = new THREE.Points(starsGeometry, starsMaterial);
+        scene.add(starField);
+
+        const planets = [
+            { name: 'Sun', radius: 200, textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Map_of_the_full_sun.jpg/1024px-Map_of_the_full_sun.jpg', orbitRadius: 0, info: 'The star at the center of our Solar System.', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/The_Sun_by_the_Atmospheric_Imaging_Assembly_of_NASA%27s_Solar_Dynamics_Observatory_-_20100819.jpg/640px-The_Sun_by_the_Atmospheric_Imaging_Assembly_of_NASA%27s_Solar_Dynamics_Observatory_-_20100819.jpg' },
+            { name: 'Mercury', radius: 10, textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Mercury_colorenhanced.png/1024px-Mercury_colorenhanced.png', orbitRadius: 400, info: 'The smallest planet in our Solar System and closest to the Sun.', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Mercury_in_color_-_Prockter07-edit1.jpg/640px-Mercury_in_color_-_Prockter07-edit1.jpg' },
+            { name: 'Venus', radius: 16, textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/1/19/Venus_Earth_Comparison.png', orbitRadius: 600, info: 'Often called Earth\'s twin because of their similar size and mass.', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/PIA23791-Venus-NewlyProcessedView-20200608.jpg/640px-PIA23791-Venus-NewlyProcessedView-20200608.jpg' },
+            { name: 'Earth', radius: 18, textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/The_Blue_Marble_%28remastered%29.jpg/1024px-The_Blue_Marble_%28remastered%29.jpg', orbitRadius: 800, info: 'Our home planet, the only known planet to harbor life.', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/The_Earth_seen_from_Apollo_17.jpg/640px-The_Earth_seen_from_Apollo_17.jpg' },
+            { name: 'Mars', radius: 14, textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/OSIRIS_Mars_true_color.jpg/1024px-OSIRIS_Mars_true_color.jpg', orbitRadius: 1000, info: 'Known as the Red Planet due to its reddish appearance.', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/OSIRIS_Mars_true_color.jpg/640px-OSIRIS_Mars_true_color.jpg' },
+            { name: 'Jupiter', radius: 40, textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/2/2b/Jupiter_and_its_shrunken_Great_Red_Spot.jpg', orbitRadius: 1400, info: 'The largest planet in our Solar System.', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Jupiter_and_its_shrunken_Great_Red_Spot.jpg/640px-Jupiter_and_its_shrunken_Great_Red_Spot.jpg' },
+            { name: 'Saturn', radius: 36, textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Saturn_during_Equinox.jpg', orbitRadius: 1800, info: 'Known for its prominent ring system.', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Saturn_during_Equinox.jpg/640px-Saturn_during_Equinox.jpg' },
+            { name: 'Uranus', radius: 24, textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/3/3d/Uranus2.jpg', orbitRadius: 2200, info: 'An ice giant with a tilted rotation axis.', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Uranus2.jpg/640px-Uranus2.jpg' },
+            { name: 'Neptune', radius: 24, textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/6/63/Neptune_-_Voyager_2_%2829347980845%29_flatten_crop.jpg', orbitRadius: 2600, info: 'The windiest planet in our Solar System.', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Neptune_-_Voyager_2_%2829347980845%29_flatten_crop.jpg/640px-Neptune_-_Voyager_2_%2829347980845%29_flatten_crop.jpg' }
+        ];
+
+        const solarSystem = new THREE.Object3D();
+        scene.add(solarSystem);
+
+        const planetMeshes = [];
+
+        planets.forEach((planet, index) => {
+            const geometry = new THREE.SphereGeometry(planet.radius, 32, 32);
+            const material = new THREE.MeshBasicMaterial();
+            const mesh = new THREE.Mesh(geometry, material);
+            
+            textureLoader.load(planet.textureUrl, (texture) => {
+                material.map = texture;
+                material.needsUpdate = true;
+            });
+
+            if (index > 0) {  // Skip the Sun
+                mesh.position.x = planet.orbitRadius;
+                const orbitGeometry = new THREE.RingGeometry(planet.orbitRadius - 0.5, planet.orbitRadius + 0.5, 64);
+                const orbitMaterial = new THREE.MeshBasicMaterial({color: 0x444444, side: THREE.DoubleSide});
+                const orbitMesh = new THREE.Mesh(orbitGeometry, orbitMaterial);
+                orbitMesh.rotation.x = Math.PI / 2;
+                solarSystem.add(orbitMesh);
+            }
+            solarSystem.add(mesh);
+            planetMeshes.push(mesh);
+        });
+
+        // Add Moon
+        const moonRadius = 5;
+        const moonOrbitRadius = 30;
+        const moonGeometry = new THREE.SphereGeometry(moonRadius, 32, 32);
+        const moonMaterial = new THREE.MeshBasicMaterial({
+            map: textureLoader.load('https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/1024px-FullMoon2010.jpg')
+        });
+        const moonMesh = new THREE.Mesh(moonGeometry, moonMaterial);
+        const moonOrbit = new THREE.Object3D();
+        moonOrbit.position.x = planets[3].orbitRadius; // Earth's orbit radius
+        moonMesh.position.x = moonOrbitRadius;
+        moonOrbit.add(moonMesh);
+        solarSystem.add(moonOrbit);
+
+        // Add asteroid belt
+        const asteroidBelt = new THREE.Object3D();
+        for (let i = 0; i < 2000; i++) {
+            const radius = Math.random() * 1 + 1;
+            const geometry = new THREE.SphereGeometry(radius, 8, 8);
+            const material = new THREE.MeshBasicMaterial({color: 0x888888});
+            const asteroid = new THREE.Mesh(geometry, material);
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Math.random() * 100 + 1100;
+            asteroid.position.set(
+                Math.cos(angle) * distance,
+                (Math.random() - 0.5) * 20,
+                Math.sin(angle) * distance
+            );
+            asteroidBelt.add(asteroid);
+        }
+        solarSystem.add(asteroidBelt);
+
+        camera.position.z = 4000;
+
+        const infoPanel = document.getElementById('info-panel');
+        const zoomInfo = document.getElementById('zoom-info');
+
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        });
+
+        window.addEventListener('click', () => {
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(planetMeshes);
+
+            if (intersects.length > 0) {
+                const planet = planets[planetMeshes.indexOf(intersects[0].object)];
+                infoPanel.innerHTML = `<h2>${planet.name}</h2><p>${planet.info}</p><p>Radius: ${planet.radius} units<br>Orbit: ${planet.orbitRadius} units</p><img src="${planet.image}" alt="${planet.name}">`;
+                infoPanel.style.display = 'block';
+            } else {
+                infoPanel.style.display = 'none';
+            }
+        });
+
+        let zoomLevel = 4000;
+        let rotationSpeed = 0.0005;
+
+        document.addEventListener('wheel', (event) => {
+            zoomLevel += event.deltaY * 0.5;
+            zoomLevel = Math.max(400, Math.min(zoomLevel, 40000));
+            updateZoomInfo();
+        });
+
+        function updateZoomInfo() {
+            if (zoomLevel > 20000) {
+                zoomInfo.textContent = 'Zoom Level: Universe';
+            } else if (zoomLevel > 10000) {
+                zoomInfo.textContent = 'Zoom Level: Milky Way';
+            } else if (zoomLevel > 3000) {
+                zoomInfo.textContent = 'Zoom Level: Solar System';
+            } else {
+                zoomInfo.textContent = 'Zoom Level: Planetary';
+            }
+        }
+
+        let isDragging = false;
+        let previousMousePosition = {
+            x: 0,
+            y: 0
+        };
+
+        document.addEventListener('mousedown', () => {
+            isDragging = true;
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const deltaMove = {
+                    x: e.offsetX - previousMousePosition.x,
+                    y: e.offsetY - previousMousePosition.y
+                };
+
+                solarSystem.rotation.y += deltaMove.x * 0.005;
+                solarSystem.rotation.x += deltaMove.y * 0.005;
+            }
+
+            previousMousePosition = {
+                x: e.offsetX,
+                y: e.offsetY
+            };
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            planetMeshes.forEach((mesh, index) => {
+                if (index > 0) {  // Skip the Sun
+                    const planet = planets[index];
+                    const angle = Date.now() * rotationSpeed * (1 / Math.sqrt(planet.orbitRadius));
+                    mesh.position.x = Math.cos(angle) * planet.orbitRadius;
+                    mesh.position.z = Math.sin(angle) * planet.orbitRadius;
+                }
+                mesh.rotation.y += 0.005 / (index + 1);  // Rotate planets on their axis
+            });
+
+            // Rotate Moon around Earth
+            const moonAngle = Date.now() * rotationSpeed * 10;
+            moonOrbit.position.x = Math.cos(moonAngle) * planets[3].orbitRadius;
+            moonOrbit.position.z = Math.sin(moonAngle) * planets[3].orbitRadius;
+            moonMesh.rotation.y += 0.01;
+
+            asteroidBelt.rotation.y += rotationSpeed * 0.5;
+
+            camera.position.z = zoomLevel;
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Add event listeners for navbar buttons
+        document.getElementById('home-btn').addEventListener('click', () => {
+            camera.position.set(0, 0, 4000);
+            solarSystem.rotation.set(0, 0, 0);
+        });
+
+        const aboutModal = document.getElementById('about-modal');
+        const teamModal = document.getElementById('team-modal');
+
+        document.getElementById('about-btn').addEventListener('click', () => {
+            aboutModal.style.display = 'block';
+        });
+
+        document.getElementById('team-btn').addEventListener('click', () => {
+            teamModal.style.display = 'block';
+        });
+
+        // Close modals when clicking on the close button or outside the modal
+        document.querySelectorAll('.close, .modal').forEach(element => {
+            element.addEventListener('click', (e) => {
+                if (e.target === element) {
+                    aboutModal.style.display = 'none';
+                    teamModal.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+<!-- Add this HTML just before the closing </body> tag -->
+<div id="zoom-slider-container">
+    <input type="range" id="zoom-slider" min="400" max="40000" value="4000">
+</div>
+
+<style>
+    /* Add this to your existing <style> section */
+    #zoom-slider-container {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 300px;
+        background-color: rgba(0, 0, 0, 0.5);
+        padding: 10px;
+        border-radius: 10px;
+    }
+    #zoom-slider {
+        width: 100%;
+    }
+</style>
+
+<script>
+    // Add this to your existing <script> section, just before the animate() function
+
+    const zoomSlider = document.getElementById('zoom-slider');
+
+    zoomSlider.addEventListener('input', () => {
+        zoomLevel = parseFloat(zoomSlider.value);
+        updateZoomInfo();
+    });
+
+    // Modify the existing updateZoomInfo() function
+    function updateZoomInfo() {
+        if (zoomLevel > 20000) {
+            zoomInfo.textContent = 'Zoom Level: Universe';
+        } else if (zoomLevel > 10000) {
+            zoomInfo.textContent = 'Zoom Level: Milky Way';
+        } else if (zoomLevel > 3000) {
+            zoomInfo.textContent = 'Zoom Level: Solar System';
+        } else {
+            zoomInfo.textContent = 'Zoom Level: Planetary';
+        }
+        zoomSlider.value = zoomLevel; // Update slider position
+    }
+
+    // Modify the existing wheel event listener
+    document.addEventListener('wheel', (event) => {
+        zoomLevel += event.deltaY * 0.5;
+        zoomLevel = Math.max(400, Math.min(zoomLevel, 40000));
+        updateZoomInfo();
+    });
+
+    // In the animate() function, replace the existing camera position update with:
+    camera.position.z = zoomLevel;
+</script>
